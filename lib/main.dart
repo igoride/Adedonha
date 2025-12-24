@@ -1,3 +1,4 @@
+import 'package:adedonha/screens/gamescreen.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -45,7 +46,10 @@ class HomeScreen extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
               ),
               onPressed: () {
-
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const GameScreen()),
+                );
               },
               child: const Text('Start Game'),
             ),
