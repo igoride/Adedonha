@@ -1,18 +1,20 @@
-import 'package:adedonha/data/repositories/game_repository_impl.dart';
-import 'package:adedonha/data/services/letter_service.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+import 'pages/home_page.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-import 'presentation/views/home_screen.dart';
-import 'presentation/viewmodels/settings_viewmodel.dart';
-import 'presentation/viewmodels/game_viewmodel.dart';
-import 'presentation/viewmodels/multiplayer_viewmodel.dart';
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
-import 'domain/usecases/generate_letter_usecase.dart';
-import 'domain/usecases/calculate_score_usecase.dart';
-import 'infrastructure/network/websocket_service.dart';
+  // Login anônimo
+  if (FirebaseAuth.instance.currentUser == null) {
+    await FirebaseAuth.instance.signInAnonymously();
+  }
 
-void main() {
   runApp(const MyApp());
 }
 
@@ -21,42 +23,11 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final repository = GameRepositoryImpl(LetterService());
-
-    return MultiProvider(
-      providers: [
-        /// SETTINGS (global)
-        ChangeNotifierProvider(
-          create: (_) => SettingsViewModel(),
-        ),
-
-        /// WEBSOCKET SERVICE (single instance)
-        Provider(
-          create: (_) => WebSocketService(),
-          dispose: (_, service) => service.dispose(),
-        ),
-
-        /// MULTIPLAYER (depends on WebSocketService)
-        ChangeNotifierProvider(
-          create: (context) => MultiplayerViewModel(
-            context.read<WebSocketService>(),
-          ),
-        ),
-
-        /// GAME (depends on Settings + Multiplayer)
-        ChangeNotifierProvider(
-          create: (context) => GameViewModel(
-            generateLetter: GenerateLetterUseCase(repository),
-            calculateScore: CalculateScoreUseCase(repository),
-            settings: context.read<SettingsViewModel>(),
-            multiplayer: context.read<MultiplayerViewModel>(),
-          ),
-        ),
-      ],
-      child: const MaterialApp(
-        debugShowCheckedModeBanner: false,
-        home: HomeScreen(),
-      ),
+    return const MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: HomePage(),
     );
   }
 }
+
+
