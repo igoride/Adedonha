@@ -22,18 +22,27 @@ class _HomePageState extends State<HomePage> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
+            // 👤 NOME
             TextField(
               controller: nameCtrl,
-              decoration: const InputDecoration(labelText: 'Seu nome'),
+              decoration: const InputDecoration(
+                labelText: 'Seu nome',
+                border: OutlineInputBorder(),
+              ),
             ),
+
             const SizedBox(height: 20),
+
+            // ➕ CRIAR SALA
             ElevatedButton(
               child: const Text('Criar Sala'),
               onPressed: () async {
                 if (nameCtrl.text.isEmpty) return;
 
-                await service.setPlayerName(nameCtrl.text.toString());
-                final roomId = await service.createRoom();
+                final roomId =
+                await service.createRoom(nameCtrl.text);
+
+                if (!mounted) return;
 
                 Navigator.push(
                   context,
@@ -43,21 +52,34 @@ class _HomePageState extends State<HomePage> {
                 );
               },
             ),
-            const SizedBox(height: 20),
+
+            const SizedBox(height: 30),
+
+            // 🔑 CÓDIGO
             TextField(
               controller: codeCtrl,
-              decoration:
-              const InputDecoration(labelText: 'Código da sala'),
+              textCapitalization: TextCapitalization.characters,
+              decoration: const InputDecoration(
+                labelText: 'Código da sala',
+                border: OutlineInputBorder(),
+              ),
             ),
+
+            const SizedBox(height: 10),
+
+            // 🔗 ENTRAR NA SALA
             ElevatedButton(
               child: const Text('Entrar na Sala'),
               onPressed: () async {
                 if (nameCtrl.text.isEmpty ||
                     codeCtrl.text.isEmpty) return;
 
-                await service.setPlayerName(nameCtrl.text);
-                final roomId =
-                await service.joinRoom(codeCtrl.text.toUpperCase());
+                final roomId = await service.joinRoom(
+                  codeCtrl.text.toUpperCase(),
+                  nameCtrl.text,
+                );
+
+                if (!mounted) return;
 
                 Navigator.push(
                   context,
@@ -73,4 +95,3 @@ class _HomePageState extends State<HomePage> {
     );
   }
 }
-
