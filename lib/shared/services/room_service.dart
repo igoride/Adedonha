@@ -1,145 +1,346 @@
-import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class RoomService {
-  final _db = FirebaseFirestore.instance;
-  final _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  String get userId => _auth.currentUser!.uid;
+  String get userId => FirebaseAuth.instance.currentUser!.uid;
 
-  // ===================== ROOMS =====================
+  Future<String> createRoom(String playerName) async {
+    final doc = _db.collection('rooms').doc();
 
-  Future<String> createRoom(String name) async {
-    final code = _generateCode();
-
-    final room = await _db.collection('rooms').add({
-      'code': code,
-      'status': 'waiting',
-      'currentLetter': '',
-      'createdAt': FieldValue.serverTimestamp(),
-      'settings': {
-        'roundTime': 120,
-        'rounds': 3,
-        'categories': {
-          'animal': true,
-          'cidade': true,
-          'objeto': true,
-        }
-      }
+    await doc.set({
+      'code': doc.id.substring(0, 6).toUpperCase(),
+      'hostId': userId,
+      'hostName': playerName,
+      'status': 'lobby',
+      'roundTime': 120,
+      'rounds': 3,
+      'categories': {
+        'Animal': true,
+        'Cidade': true,
+        'Objeto': true,
+      },
+      'currentRoundId': null,
     });
 
-    await _addPlayer(room.id, name);
-    return room.id;
+    await addPlayer(doc.id, playerName);
+    return doc.id;
   }
 
-  Future<String> joinRoom(String code, String name) async {
-    final query = await _db
-        .collection('rooms')
-        .where('code', isEqualTo: code)
-        .limit(1)
-        .get();
+  Future<String> joinRoom(String code, String playerName) async {
+    final snap =
+    await _db.collection('rooms').where('code', isEqualTo: code).get();
 
-    if (query.docs.isEmpty) {
+    if (snap.docs.isEmpty) {
       throw Exception('Sala não encontrada');
     }
 
-    final roomId = query.docs.first.id;
-    await _addPlayer(roomId, name);
+    final roomId = snap.docs.first.id;
+    await addPlayer(roomId, playerName);
     return roomId;
   }
 
-  Future<void> _addPlayer(String roomId, String name) async {
-    await _db
-        .collection('rooms')
-        .doc(roomId)
-        .collection('players')
-        .doc(userId)
-        .set({
-      'name': name,
+  Future<void> addPlayer(String roomId, String playerName) async {
+    final playersRef =
+    _db.collection('rooms').doc(roomId).collection('players');
+
+    final existing = await playersRef
+        .where('name', isEqualTo: playerName)
+        .limit(1)
+        .get();
+
+    if (existing.docs.isNotEmpty) return;
+
+    await playersRef.doc(userId).set({
+      'name': playerName,
       'score': 0,
       'joinedAt': FieldValue.serverTimestamp(),
     });
   }
 
-  // ===================== SETTINGS =====================
-
-  Future<void> saveSettings(
-      String roomId, {
-        required int roundTime,
-        required int rounds,
-        required Map<String, bool> categories,
-      }) async {
-    await _db.collection('rooms').doc(roomId).update({
-      'settings': {
-        'roundTime': roundTime,
-        'rounds': rounds,
-        'categories': categories,
-      }
-    });
-  }
-
-  Stream<Map<String, dynamic>> settingsStream(String roomId) {
+  Stream<DocumentSnapshot<Map<String, dynamic>>> roomStream(String roomId) {
     return _db
         .collection('rooms')
-        .doc(roomId)
-        .snapshots()
-        .map((doc) =>
-    Map<String, dynamic>.from(doc.data()!['settings']));
+        .doc(roomId).snapshots();
   }
 
-  // ===================== GAME =====================
-
-  Future<void> setLetter(String roomId, String letter) async {
-    await _db.collection('rooms').doc(roomId).update({
-      'currentLetter': letter,
-    });
-  }
-
-  Stream<String> letterStream(String roomId) {
-    return _db
-        .collection('rooms')
-        .doc(roomId)
-        .snapshots()
-        .map((doc) => doc['currentLetter'] ?? '');
-  }
-
-  Future<void> updateRoomStatus(
-      String roomId, {
-        required String status,
-      }) async {
-    await _db.collection('rooms').doc(roomId).update({
-      'status': status,
-    });
-  }
-
-  // ===================== STREAMS =====================
-
-  Stream<DocumentSnapshot> roomStream(String roomId) {
-    return _db.collection('rooms').doc(roomId).snapshots();
-  }
-
-  Stream<QuerySnapshot> playersStream(String roomId) {
+  Stream<QuerySnapshot<Map<String, dynamic>>> playersStream(String roomId) {
     return _db
         .collection('rooms')
         .doc(roomId)
         .collection('players')
+        .orderBy('joinedAt')
         .snapshots();
   }
 
-  // ===================== UTILS =====================
+  Future<void> saveSettings(
+      String roomId,
+      int roundTime,
+      int rounds,
+      Map<String, bool> categories,
+      ) async {
+    await _db.collection('rooms').doc(roomId).update({
+      'roundTime': roundTime,
+      'rounds': rounds,
+      'categories': categories,
+    });
+  }
 
-  String _generateCode() {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    final rnd = Random();
-    return String.fromCharCodes(
-      Iterable.generate(
-        4,
-            (_) => chars.codeUnitAt(rnd.nextInt(chars.length)),
+  Future<Map<String, dynamic>> getRoomSettings(String roomId) async {
+    final doc = await _db.collection('rooms').doc(roomId).get();
+    final data = doc.data() ?? {};
+
+    return {
+      'roundTime': data['roundTime'] ?? 120,
+      'rounds': data['rounds'] ?? 3,
+      'categories': Map<String, bool>.from(
+        data['categories'] ??
+            {'Animal': true, 'Cidade': true, 'Objeto': true},
       ),
-    );
+    };
+  }
+
+  Future<bool> isHost(String roomId) async {
+    final doc = await _db.collection('rooms').doc(roomId).get();
+    return doc['hostId'] == userId;
+  }
+
+  Future<void> setRoomStatus(String roomId, String status) async {
+    await FirebaseFirestore.instance
+        .collection('rooms')
+        .doc(roomId)
+        .update({'status': status});
+  }
+
+  Stream<Map<String, dynamic>> settingsStream(String roomId) {
+    return _db.collection('rooms').doc(roomId).snapshots().map((snap) {
+      final data = snap.data();
+      if (data == null) return {};
+
+      return {
+        'roundTime': data['roundTime'] ?? 120,
+        'rounds': data['rounds'] ?? 3,
+        'categories': Map<String, bool>.from(
+          data['categories'] ??
+              {'Animal': true, 'Cidade': true, 'Objeto': true},
+        ),
+        'hostId': data['hostId'],
+        'status': data['status'],
+        'code': data['code'],
+      };
+    });
+  }
+
+  Future<DocumentReference> startRound(String roomId) async {
+    final roomRef = _db.collection('rooms').doc(roomId);
+    final roomSnap = await roomRef.get();
+
+    if (roomSnap['hostId'] != userId) {
+      throw Exception('Apenas o host pode iniciar a rodada');
+    }
+
+    final settings = await getRoomSettings(roomId);
+    final categories = settings['categories'].keys.toList();
+
+    final letter =
+    String.fromCharCode(65 + (DateTime.now().millisecondsSinceEpoch % 26));
+
+    final roundRef = await roomRef.collection('rounds').add({
+      'letter': letter,
+      'startedAt': FieldValue.serverTimestamp(),
+      'duration': settings['roundTime'],
+      'status': 'playing',
+      'categories': categories,
+    });
+
+    await roomRef.update({
+      'status': 'playing',
+      'currentRoundId': roundRef.id,
+    });
+
+    return roundRef;
+  }
+
+  Stream<DocumentSnapshot<Map<String, dynamic>>> roundStream(
+      String roomId,
+      String roundId,
+      ) {
+    return _db
+        .collection('rooms')
+        .doc(roomId)
+        .collection('rounds')
+        .doc(roundId)
+        .snapshots();
+  }
+
+  Future<void> stopRound(String roomId, String roundId) async {
+    final roomRef = _db.collection('rooms').doc(roomId);
+    final roomSnap = await roomRef.get();
+
+    if (roomSnap['hostId'] != userId) return;
+
+    await roomRef.update({'status': 'voting'});
+    await roomRef
+        .collection('rounds')
+        .doc(roundId)
+        .update({'status': 'voting'});
+  }
+
+  Future<void> submitAnswers(
+      String roomId,
+      String roundId,
+      String playerName,
+      Map<String, String> answers,
+      ) async {
+    await _db
+        .collection('rooms')
+        .doc(roomId)
+        .collection('rounds')
+        .doc(roundId)
+        .collection('answers')
+        .doc(userId)
+        .set({
+      'playerId': userId,
+      'playerName': playerName,
+      'answers': answers,
+      'submittedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Stream<QuerySnapshot<Map<String, dynamic>>> answersStream(
+      String roomId,
+      String roundId,
+      ) {
+    return _db
+        .collection('rooms')
+        .doc(roomId)
+        .collection('rounds')
+        .doc(roundId)
+        .collection('answers')
+        .snapshots();
+  }
+
+  Future<void> finishVoting(String roomId) async {
+    final roomRef = _db.collection('rooms').doc(roomId);
+    final snap = await roomRef.get();
+
+    if (snap['hostId'] != userId) return;
+
+    await roomRef.update({
+      'status': 'lobby',
+      'currentRoundId': null,
+    });
+  }
+
+  Future<void> calculateScores(String roomId, String roundId) async {
+    final firestore = FirebaseFirestore.instance;
+
+    final roundSnap = await firestore
+        .collection('rooms')
+        .doc(roomId)
+        .collection('rounds')
+        .doc(roundId)
+        .get();
+
+    final roundLetter =
+    roundSnap['letter'].toString().trim().toUpperCase();
+
+    final answersSnap = await firestore
+        .collection('rooms')
+        .doc(roomId)
+        .collection('rounds')
+        .doc(roundId)
+        .collection('answers')
+        .get();
+
+    final Map<String, Map<String, List<String>>> categoryMap = {};
+
+    for (final doc in answersSnap.docs) {
+      final data = doc.data();
+      final answers = Map<String, dynamic>.from(data['answers'] ?? {});
+      final votes = Map<String, dynamic>.from(data['votes'] ?? {});
+      final playerId = data['playerId'];
+
+      for (final entry in answers.entries) {
+        final category = entry.key;
+
+        final rawAnswer = entry.value.toString().trim();
+        final answer = rawAnswer.toUpperCase();
+
+        if (answer.length <= 1) continue;
+
+        if (!answer.startsWith(roundLetter)) continue;
+
+        final yes = votes[category]?['yes'] ?? 0;
+        final no = votes[category]?['no'] ?? 0;
+
+        if (no > yes) continue;
+
+        categoryMap.putIfAbsent(category, () => {});
+        categoryMap[category]!.putIfAbsent(answer, () => []);
+        categoryMap[category]![answer]!.add(playerId);
+      }
+    }
+
+    final Map<String, int> roundScores = {};
+
+    for (final category in categoryMap.entries) {
+      for (final answerEntry in category.value.entries) {
+        final players = answerEntry.value;
+
+        final points = players.length == 1 ? 10 : 5;
+
+        for (final uid in players) {
+          roundScores[uid] = (roundScores[uid] ?? 0) + points;
+        }
+      }
+    }
+
+    final batch = firestore.batch();
+
+    for (final entry in roundScores.entries) {
+      final uid = entry.key;
+      final points = entry.value;
+
+      final roundScoreRef = firestore
+          .collection('rooms')
+          .doc(roomId)
+          .collection('rounds')
+          .doc(roundId)
+          .collection('scores')
+          .doc(uid);
+
+      batch.set(roundScoreRef, {
+        'points': points,
+      });
+
+      final playerRef = firestore
+          .collection('rooms')
+          .doc(roomId)
+          .collection('players')
+          .doc(uid);
+
+      batch.update(playerRef, {
+        'score': FieldValue.increment(points),
+      });
+    }
+
+    await batch.commit();
+  }
+
+  Future<bool> hasNextRound(String roomId) async {
+    final roomRef = _db.collection('rooms').doc(roomId);
+    final roomSnap = await roomRef.get();
+    final roomData = roomSnap.data()!;
+
+    final totalRounds = roomData['rounds'] ?? 3;
+    final playedRounds = (await roomRef.collection('rounds').get()).docs.length;
+
+    return playedRounds < totalRounds;
   }
 }
+
 
 
 
