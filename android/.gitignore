@@ -16,8 +16,6 @@ build/
 .pub/
 
 .firebase/
-.firebaserc
-firebase.json
 
 web/firebase_options.dart
 
