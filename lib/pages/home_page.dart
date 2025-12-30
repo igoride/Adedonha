@@ -1,9 +1,12 @@
+import 'package:adedonha/main.dart';
 import 'package:flutter/material.dart';
 import '../shared/services/room_service.dart';
 import 'room_page.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  const HomePage({
+    super.key,
+  });
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -14,10 +17,26 @@ class _HomePageState extends State<HomePage> {
   final codeCtrl = TextEditingController();
   final service = RoomService();
 
+  void toggleTheme() {
+    if(themeNotifier.value == ThemeMode.light) {
+      themeNotifier.value = ThemeMode.dark;
+    } else {
+      themeNotifier.value = ThemeMode.light;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Stop Online')),
+      appBar: AppBar(
+          title: const Text('Stop Online'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.brightness_6),
+            onPressed: toggleTheme,
+          ),
+        ],
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -47,23 +66,27 @@ class _HomePageState extends State<HomePage> {
               controller: codeCtrl,
               decoration: const InputDecoration(labelText: 'Código da sala'),
             ),
-            ElevatedButton(
-              child: const Text('Entrar na Sala'),
-              onPressed: () async {
-                final roomId = await service.joinRoom(
-                  codeCtrl.text.toUpperCase(),
-                  nameCtrl.text,
-                );
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => RoomPage(
-                      roomId: roomId,
-                      playerName: nameCtrl.text,
+
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: ElevatedButton(
+                child: const Text('Entrar na Sala'),
+                onPressed: () async {
+                  final roomId = await service.joinRoom(
+                    codeCtrl.text.toUpperCase(),
+                    nameCtrl.text,
+                  );
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => RoomPage(
+                        roomId: roomId,
+                        playerName: nameCtrl.text,
+                      ),
                     ),
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
           ],
         ),

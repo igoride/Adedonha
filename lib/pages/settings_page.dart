@@ -17,10 +17,15 @@ class _SettingsPageState extends State<SettingsPage> {
 
   int roundTime = 120;
   int rounds = 3;
+
   Map<String, bool> categories = {
     'Animal': true,
-    'Cidade': true,
+    'Nome': true,
+    'CEP': true,
     'Objeto': true,
+    "MSE": true,
+    "Filme": true,
+    "Musica": true,
   };
 
   bool initialized = false;
