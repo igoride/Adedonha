@@ -1,5 +1,5 @@
 # Adedonha Online
-Navegardor - https://adedonha-d46b4.web.app/
+Navegador - https://adedonha-d46b4.web.app/
 App - https://adedonha-d46b4.firebaseapp.com/
 
 ## Funcionalidades
