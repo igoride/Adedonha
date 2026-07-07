@@ -38,10 +38,10 @@ dependencies:
   web_socket_channel: ^3.0.3
   hive: ^2.2.3
   hive_flutter: ^1.1.0
-  firebase_core: ^3.6.0
-  firebase_auth: ^5.3.1
-  cloud_firestore: ^5.5.0
-  audioplayers: ^5.0.0
+  firebase_core: ^4.11.0
+  firebase_auth: ^6.5.4
+  cloud_firestore: ^6.6.0
+  audioplayers: ^6.7.1
 
 dev_dependencies:
   flutter_test:

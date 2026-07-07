@@ -28,6 +28,64 @@ class RoomService {
     return doc.id;
   }
 
+  /// Remove o jogador atual da sala, se sala vazia deleta sala
+  Future<void> leaveRoom(String roomId) async {
+    final roomRef = _db.collection('rooms').doc(roomId);
+    final playersRef = roomRef.collection('players');
+
+    await playersRef.doc(userId).delete();
+
+    final remaining = await playersRef.limit(1).get();
+
+    if (remaining.docs.isEmpty) {
+      await deleteRoom(roomId, checkHost: false);
+    }
+  }
+
+  /// Apaga a sala e todas as suas subcoleções (players, rounds,
+  Future<void> deleteRoom(String roomId, {bool checkHost = true}) async {
+    final roomRef = _db.collection('rooms').doc(roomId);
+    final roomSnap = await roomRef.get();
+
+    if (!roomSnap.exists) return;
+
+    if (checkHost && roomSnap.data()?['hostId'] != userId) {
+      throw Exception('Apenas o host pode apagar a sala');
+    }
+
+    // Apaga rounds e subcoleções
+    final roundsSnap = await roomRef.collection('rounds').get();
+    for (final roundDoc in roundsSnap.docs) {
+      await _deleteSubcollection(roundDoc.reference.collection('answers'));
+      await _deleteSubcollection(roundDoc.reference.collection('scores'));
+      await roundDoc.reference.delete();
+    }
+
+    // apaga os jogadores.
+    await _deleteSubcollection(roomRef.collection('players'));
+
+    // apaga o documento da sala.
+    await roomRef.delete();
+  }
+
+  /// apaga as subcollections
+  Future<void> _deleteSubcollection(CollectionReference ref) async {
+    const batchSize = 300;
+
+    while (true) {
+      final snap = await ref.limit(batchSize).get();
+      if (snap.docs.isEmpty) break;
+
+      final batch = _db.batch();
+      for (final doc in snap.docs) {
+        batch.delete(doc.reference);
+      }
+      await batch.commit();
+
+      if (snap.docs.length < batchSize) break;
+    }
+  }
+
   Future<String> joinRoom(String code, String playerName) async {
     final snap =
     await _db.collection('rooms').where('code', isEqualTo: code).get();

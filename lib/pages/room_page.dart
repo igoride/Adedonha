@@ -195,6 +195,44 @@ class _RoomPageState extends State<RoomPage> {
                     style: TextStyle(fontSize: 14),
                   ),
                 ),
+
+              if (isHost && status == 'lobby')
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      foregroundColor: Colors.red,
+                    ),
+                    icon: const Icon(Icons.delete_forever, color: Colors.white),
+                    label: const Text('Apagar Sala', style: TextStyle(color: Colors.white)),
+                    onPressed: () async {
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (_) => AlertDialog(
+                          title: const Text('Apagar sala?'),
+                          content: const Text('Essa ação não pode ser desfeita.'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, false),
+                              child: const Text('Cancelar'),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, true),
+                              child: const Text('Apagar'),
+                            ),
+                          ],
+                        ),
+                      );
+                      if (confirm == true) {
+                        await service.deleteRoom(widget.roomId);
+                        if (context.mounted) {
+                          Navigator.popUntil(context, (r) => r.isFirst);
+                        }
+                      }
+                    },
+                  ),
+                ),
             ],
           );
         },
