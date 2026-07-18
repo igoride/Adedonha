@@ -60,10 +60,14 @@ class WelcomePage extends StatelessWidget {
                     clipper: WaveClipper(),
                     child: Container(
                       decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.primary,
                         gradient: LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
-                          colors: primaryGradient,
+                          colors: [
+                            Theme.of(context).colorScheme.primary,
+                            Theme.of(context).colorScheme.secondary
+                          ],//primaryGradient,
                         ),
                       ),
                     ),
@@ -150,8 +154,7 @@ class WelcomePage extends StatelessWidget {
                                         height: 56,
                                         child: ElevatedButton.icon(
                                           style: ElevatedButton.styleFrom(
-                                            backgroundColor: const Color(0xFF3F37C9),
-                                            foregroundColor: Colors.white,
+
                                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                                             elevation: 1,
                                           ),
