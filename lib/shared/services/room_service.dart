@@ -28,6 +28,22 @@ class RoomService {
     return doc.id;
   }
 
+  Stream<List<dynamic>> getAvailableRooms() {
+    return _db.collection('rooms')
+       // .where('status', isEqualTo: 'waiting') // Exemplo: apenas salas que não começaram o jogo ainda
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map((doc) {
+      // Converte o documento em um objeto customizado ou repassa os dados mapeados
+      final data = doc.data();
+      return RoomModel(
+        id: doc.id,
+        code: data['code'],
+        hostName: data['hostName'],
+        playersCount: (data['players'] as Map?)?.length ?? 1,
+      );
+    }).toList());
+  }
+
   /// Remove o jogador atual da sala, se sala vazia deleta sala
   Future<void> leaveRoom(String roomId) async {
     final roomRef = _db.collection('rooms').doc(roomId);
@@ -397,6 +413,15 @@ class RoomService {
 
     return playedRounds < totalRounds;
   }
+}
+
+class RoomModel {
+  final String id;
+  final String? code;
+  final String? hostName;
+  final int? playersCount;
+
+  RoomModel({required this.id, this.code, this.hostName, this.playersCount});
 }
 
 
