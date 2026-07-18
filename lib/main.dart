@@ -1,7 +1,7 @@
+import 'package:adedonha/pages/welcome_page.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'pages/home_page.dart';
 import 'firebase_options.dart';
 
 final themeNotifier = ValueNotifier<ThemeMode>(ThemeMode.light);
@@ -143,7 +143,7 @@ class MyApp extends StatelessWidget {
           ),
 
           themeMode: currentMode,
-          home: const HomePage(),
+          home: const WelcomePage(),
         );
       },
     );
