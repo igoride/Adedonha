@@ -28,7 +28,7 @@ class MyApp extends StatelessWidget {
 
           theme: ThemeData(
             brightness: Brightness.light,
-            primaryColor: Colors.indigo,
+            primaryColor: const Color(0xFF3F37C9),
             primarySwatch: Colors.blue,
             scaffoldBackgroundColor: Colors.grey[50],
 
@@ -38,7 +38,7 @@ class MyApp extends StatelessWidget {
             ),
 
             appBarTheme: AppBarTheme(
-              backgroundColor: Colors.indigo,
+              backgroundColor: const Color(0xFF3F37C9),
               foregroundColor: Colors.white,
               elevation: 4,
             ),
@@ -50,7 +50,7 @@ class MyApp extends StatelessWidget {
 
             elevatedButtonTheme: ElevatedButtonThemeData(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.indigo,
+                backgroundColor: const Color(0xFF3F37C9),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -59,10 +59,24 @@ class MyApp extends StatelessWidget {
             ),
 
             textTheme: TextTheme(
-              headlineSmall: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.indigo),
-              headlineMedium: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black87),
-              bodySmall: TextStyle(fontSize: 16, color: Colors.black87),
-              bodyMedium: TextStyle(fontSize: 14, color: Colors.grey[800]),
+              headlineSmall: TextStyle(
+                  fontSize: 32, 
+                  fontWeight: FontWeight.bold, 
+                  color: const Color(0xFF3F37C9),
+              ),
+              headlineMedium: TextStyle(
+                  fontSize: 24, fontWeight: 
+                  FontWeight.bold, color: 
+                  Colors.black87
+              ),
+              bodySmall: TextStyle(
+                  fontSize: 16, 
+                  color: Colors.black87
+              ),
+              bodyMedium: TextStyle(
+                  fontSize: 14, 
+                  color: Colors.grey[800]
+              ),
             ),
 
             inputDecorationTheme: InputDecorationTheme(
@@ -73,8 +87,6 @@ class MyApp extends StatelessWidget {
                 borderSide: BorderSide.none,
               ),
             ),
-
-            cardColor: Colors.black,
 
             cardTheme: CardThemeData(
               color: Colors.black,
@@ -89,6 +101,7 @@ class MyApp extends StatelessWidget {
           darkTheme: ThemeData(
             brightness: Brightness.dark,
             primaryColor: Colors.indigo[200],
+
             colorScheme: ColorScheme.dark(
               primary: Colors.indigo[200]!,
               secondary: Colors.amber[300]!,
@@ -103,7 +116,7 @@ class MyApp extends StatelessWidget {
 
             elevatedButtonTheme: ElevatedButtonThemeData(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.indigo[200],
+                backgroundColor: Colors.indigo[200]!,
                 foregroundColor: Colors.black87,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),

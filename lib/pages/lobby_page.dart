@@ -306,8 +306,8 @@ class _LobbyPageState extends State<LobbyPage> {
                       }
 
                       return ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
+                        //shrinkWrap: true,
+                        //physics: const NeverScrollableScrollPhysics(),
                         itemCount: rooms.length,
                         itemBuilder: (context, index) {
                           final room = rooms[index];
